@@ -10,7 +10,11 @@
 4. Сформировать урл, перейти и скопировать себе access_token.
 
 ```
-https://oauth.vk.com/authorize?client_id=АЙДИ ПРИЛОЖЕНИЯ&display=page&redirect_uri=https://oauth.vk.com/blank.html&scope=ПРАВА&response_type=token&v=5.73
+https://oauth.vk.com/authorize?client_id=АЙДИ ПРИЛОЖЕНИЯ&display=page&redirect_uri=https://oauth.vk.com/blank.html&scope=ПРАВА&response_type=token&v=5.74
+```
+**Пример**
+```
+https://oauth.vk.com/authorize?client_id=6362076&scope=groups,wall,offline,photos,market&redirect_uri=https://oauth.vk.com/blank.html&display=page&v=5.95&response_type=token
 ```
 
 > **Важно!** Ключ устаревает каждый раз, когда вы меняете пароль либо завершаете сеансы. <BR>
@@ -30,7 +34,7 @@ $app_service_key = 'СЕРВ. КЛЮЧ';
 $vk = new VK([
 	'access_token' => $access_token,
 	'app_service_key' => $app_service_key,
-	'ver' => '5.71'
+	'ver' => '5.95'
 	]
 );
 
@@ -87,4 +91,48 @@ function saveFile($filepath,$newname,$vk){
 }
 ```
 
+**Пример: удаление мёртвых участников.**
+
+Вы должны быть владельцем группы.
+
+```php
+<?php 
+//  Подключение.
+require_once 'vk.php';
+$access_token = 'ТОКЕН';
+$app_service_key = 'СЕРВ. КЛЮЧ';
+
+//  Вызов класса
+$vk = new VK([
+	'access_token' => $access_token,
+	'app_service_key' => $app_service_key,
+	'ver' => '5.95'
+	]
+);
+
+//Получение всех  пользователей группы и доп. поля deactivated.
+$g_id = '53125056'; //id группы для примера
+$members = $vk->getAllGroupMembers($g_id,['deactivated']);
+
+$banned_users = [];
+foreach($members as $member){
+	if(isset($member->deactivated)){
+		$banned_users[] = $member->id;
+	}
+}
+
+echo "Всего " . count($banned_users) . " заблокированных \n";
+if(count($banned_users)){
+	foreach($banned_users as $one_kill){
+		$kill = $vk->api('groups.removeUser',[
+			'group_id' => $g_id,
+			'user_id' => $one_kill
+			]
+		);
+		echo "Удалили $kill Айди $one_kill \n";
+		sleep(1);
+	}
+}
+
+```
 В процессе класс будет допиливаться, а документация - дописываться.
