@@ -10,6 +10,58 @@ class VK{
 			return false;
 		}		
 	}
+	public function marketGet(array $params){
+		//	получаем все товары из группы
+		//	$params - параметры вызова, обязательный параметр gid - идентификатор группы со знаком "минус".
+		//	Пример: marketGet(['gid' => '-33479582']);
+		//	Отдаст $data['result']
+		//	TODO: можно использовать execute
+		if(!isset($params['offset'])){
+			$first_query = $this->api('market.get',[
+				'owner_id'=> $params['gid'],
+				'offset' => 0,
+				'count' => 200,
+				]
+			);
+
+			$params['all_items_count'] = $first_query->count;
+			$params['result'] = $first_query->items;
+			
+			if($params['all_items_count'] <= 200){
+				return $params;
+			}
+			elseif($params['all_items_count'] > 200){
+				return $this->marketGet([
+						'gid'    => $params['gid'],
+						'all_items_count'  => $params['all_items_count'],
+						'offset' => 200,
+						'result' => $first_query->items
+				]);
+			}
+		}
+		else{
+			if( $params['all_items_count'] > $params['offset']){
+				$res = $this->api('market.get',[
+					'owner_id'=> $params['gid'],
+					'offset' => $params['offset'] ,
+					'count' => 200,
+					]
+				);
+				foreach($res->items as $o){
+					$params['result'][] = $o;
+				}
+				return $this->marketGet([
+						'gid'    => $params['gid'],
+						'all_items_count'  => $params['all_items_count'],
+						'offset' => $params['offset'] + 200,
+						'result' => $params['result'],
+				]);
+			}
+			else{
+				return $params;
+			}
+		}
+	}	
 	public function getAllGroupMembers($gid, array $fields = array()){
 		//	gid - id группы. Обязательный.
 		//	fields - массив доп. полей пользователя. Например ['city','deactivated']. Необязательный.
